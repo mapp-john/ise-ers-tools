@@ -35,11 +35,80 @@ def define_password():
 
 
 
+#
+#
+#
+# Define Blank URL Get Script as Function
+def blank_get(server,headers,username,password):
+    print ('''
+***********************************************************************************************
+*                             Basic URL GET Script                                            *
+*_____________________________________________________________________________________________*
+*                                                                                             *
+* USER INPUT NEEDED:                                                                          *
+*                                                                                             *
+*  1. URI Path (/ers/config/internaluser)                                                     *
+*                                                                                             *
+*  2. Save output to file                                                                     *
+*                                                                                             *
+***********************************************************************************************
+''')
+
+    print('Generating Access Token')
+    # Generate Access Token and pull domains from auth headers
+    results=access_token(server,headers,username,password)
+    headers['X-auth-access-token']=results[0]
+
+    # Request API URI Path
+    api_path = input('Please Enter URI: ').lower().strip()
+
+    # Clean URI
+    if (api_path[-1] == '/'):
+        api_path = api_path[:-1]
+
+
+    # Set URL
+    url = f'{server}{api_path}'
+
+
+    # Perform API GET call
+    print(f'Performing API GET to: {url}')
+    try:
+        # REST call with SSL verification turned off:
+        r = requests.get(url, headers=headers, verify=False)
+        status_code = r.status_code
+        resp = r.json()
+        if (status_code == 200):
+            print('GET successful...')
+            # Ask if output should be saved to File
+            save = input('Would You Like To Save The Output To File? [y/N]: ').lower()
+            if save in (['yes','ye','y']):
+                # Random Generated JSON Output File
+                filename = ''.join(i for i in [chr(random.randint(97,122)) for i in range(6)])
+                filename += '.json'
+                print(f'*\n*\nRANDOM LOG FILE CREATED... {filename}\n')
+                with open(filename, 'a') as OutFile:
+                    OutFile.write(json.dumps(resp,indent=4))
+            elif save in (['no','n','']):
+                print(json.dumps(resp,indent=4))
+        else:
+            r.raise_for_status()
+            print(f'Error occurred in GET --> {resp}')
+    except requests.exceptions.HTTPError as err:
+        print(f'Error in connection --> {err}')
+        print(json.dumps(resp,indent=4))
+    # End
+    finally:
+        try:
+            if r: r.close()
+        except:
+            None
+
 
 #
 #
 #
-# Deploy Pending FTDs
+# Bulk Delete Internal Users
 def bulk_delete_internal_user(server,session):
     print ('''
 ***********************************************************************************************
@@ -140,7 +209,7 @@ if __name__ == "__main__":
     print ('''
 ***********************************************************************************************
 *                                                                                             *
-*                   Cisco ISE ERS API Tools (Written for Python 3.6+)                        *
+*                   Cisco ISE ERS API Tools (Written for Python 3.6+)                         *
 *                                                                                             *
 ***********************************************************************************************
 *                                                                                             *
